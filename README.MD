@@ -37,7 +37,7 @@ pip install requests beautifulsoup4 lxml
 3. Run the script with the anime page URL from **AnimeFLV** as an argument:
 
    ```bash
-   python scraper.py https://www3.animeflv.net/anime/steinsgate-0
+   python scraperFLV.py https://www3.animeflv.net/anime/steinsgate-0
    ```
 ## Output
 

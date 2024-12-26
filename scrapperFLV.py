@@ -21,7 +21,7 @@ def get_anime_info(response_text):
     """Gets the anime name and the number of episodes from the HTML content."""
     anime_name = None
     number_episodes = 0
-    
+    root_index = 1
     # Search for the 'anime_info' array using a regular expression
     match = re.search(r'var anime_info = (\[.*?\]);', response_text, re.DOTALL)
     if match:
@@ -33,8 +33,8 @@ def get_anime_info(response_text):
     if match:
         episodes_data = json.loads(match.group(1))
         number_episodes = len(episodes_data)
-    
-    return anime_name, number_episodes
+        root_index = episodes_data[number_episodes - 1][0]
+    return anime_name, number_episodes, root_index
 
 def get_servers_from_video_page(url):
     """Gets the video servers for an episode page."""
@@ -63,27 +63,29 @@ def get_servers_from_video_page(url):
 
 def get_episodes_from_video_page(base_url, url):
     """Gets the list of episode URLs from the anime page."""
+    root_index = 1
     response_text = fetch_url(url)
     if response_text:
-        anime_name, number_episodes = get_anime_info(response_text)
+        anime_name, number_episodes, root_index = get_anime_info(response_text)
         if anime_name and number_episodes:
             # Create the array of URLs
-            return [f"{base_url}/ver/{anime_name}-{i}" for i in range(1, number_episodes + 1)]
-    return []
+            episode_list = [f"{base_url}/ver/{anime_name}-{i}" for i in range(root_index, number_episodes + root_index)]
+            return root_index, episode_list
+    return 0,[]
 
 def get_all_servers_data(base_url, url):
     """Gets all server data for all episodes."""
-    episode_list = get_episodes_from_video_page(base_url, url)
+    root_index = 1
+    root_index, episode_list = get_episodes_from_video_page(base_url, url)
     episodes_data = {}
 
     with ThreadPoolExecutor() as executor:
         # Use ThreadPoolExecutor to fetch server data concurrently
         results = executor.map(get_servers_from_video_page, episode_list)
-        
         # Store the results in the dictionary
-        for index, servers_data in enumerate(results):
+        for index, servers_data in enumerate(results, start=root_index):
             if servers_data:
-                episodes_data[index + 1] = servers_data
+                episodes_data[index] = servers_data
     
     return episodes_data
 
